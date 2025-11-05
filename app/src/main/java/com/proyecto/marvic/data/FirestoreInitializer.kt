@@ -12,26 +12,104 @@ object FirestoreInitializer {
         val db = FirebaseFirestore.getInstance()
         
         try {
-            val snapshot = db.collection("materials").limit(1).get().await()
-            
-            if (snapshot.isEmpty || forceReload) {
-                loadSampleData(db)
-            }
+            // Inicializar cada colección independientemente
+            initializeMaterials(db, forceReload)
+            initializeUsers(db, forceReload)
+            initializeProviders(db, forceReload)
+            initializeProjects(db, forceReload)
+            initializeMovements(db, forceReload)
+            initializeTransfers(db, forceReload)
         } catch (e: Exception) {
             e.printStackTrace()
+            println("❌ Error en inicialización: ${e.message}")
         }
     }
     
-    private suspend fun loadSampleData(db: FirebaseFirestore) {
-        // ELIMINAR TODA LA COLECCIÓN
+    private suspend fun initializeMaterials(db: FirebaseFirestore, forceReload: Boolean) {
         try {
-            val docs = db.collection("materials").get().await()
-            docs.documents.forEach { it.reference.delete().await() }
-            println("🗑️ Colección limpiada completamente")
+            val snapshot = db.collection("materials").limit(1).get().await()
+            if (snapshot.isEmpty || forceReload) {
+                println("🔄 Inicializando materiales...")
+                loadSampleMaterials(db)
+            } else {
+                println("✅ Materiales ya existen")
+            }
         } catch (e: Exception) {
-            println("⚠️ Error al limpiar: ${e.message}")
+            println("❌ Error inicializando materiales: ${e.message}")
         }
-        
+    }
+    
+    private suspend fun initializeUsers(db: FirebaseFirestore, forceReload: Boolean) {
+        try {
+            val snapshot = db.collection("users").limit(1).get().await()
+            if (snapshot.isEmpty || forceReload) {
+                println("🔄 Inicializando usuarios...")
+                loadSampleUsers(db)
+            } else {
+                println("✅ Usuarios ya existen")
+            }
+        } catch (e: Exception) {
+            println("❌ Error inicializando usuarios: ${e.message}")
+        }
+    }
+    
+    private suspend fun initializeProviders(db: FirebaseFirestore, forceReload: Boolean) {
+        try {
+            val snapshot = db.collection("providers").limit(1).get().await()
+            if (snapshot.isEmpty || forceReload) {
+                println("🔄 Inicializando proveedores...")
+                loadSampleProviders(db)
+            } else {
+                println("✅ Proveedores ya existen")
+            }
+        } catch (e: Exception) {
+            println("❌ Error inicializando proveedores: ${e.message}")
+        }
+    }
+    
+    private suspend fun initializeProjects(db: FirebaseFirestore, forceReload: Boolean) {
+        try {
+            val snapshot = db.collection("projects").limit(1).get().await()
+            if (snapshot.isEmpty || forceReload) {
+                println("🔄 Inicializando proyectos...")
+                loadSampleProjects(db)
+            } else {
+                println("✅ Proyectos ya existen")
+            }
+        } catch (e: Exception) {
+            println("❌ Error inicializando proyectos: ${e.message}")
+        }
+    }
+    
+    private suspend fun initializeMovements(db: FirebaseFirestore, forceReload: Boolean) {
+        try {
+            val snapshot = db.collection("movements").limit(1).get().await()
+            if (snapshot.isEmpty || forceReload) {
+                println("🔄 Inicializando movimientos...")
+                loadSampleMovements(db)
+            } else {
+                println("✅ Movimientos ya existen")
+            }
+        } catch (e: Exception) {
+            println("❌ Error inicializando movimientos: ${e.message}")
+        }
+    }
+    
+    private suspend fun initializeTransfers(db: FirebaseFirestore, forceReload: Boolean) {
+        try {
+            val snapshot = db.collection("transfers").limit(1).get().await()
+            if (snapshot.isEmpty || forceReload) {
+                println("🔄 Inicializando transferencias...")
+                loadSampleTransfers(db)
+            } else {
+                println("✅ Transferencias ya existen")
+            }
+        } catch (e: Exception) {
+            println("❌ Error inicializando transferencias: ${e.message}")
+        }
+    }
+    
+    private suspend fun loadSampleMaterials(db: FirebaseFirestore) {
         val currentTimestamp = Timestamp.now()
         
         // Crear materiales con IDs simples numerados
@@ -104,21 +182,6 @@ object FirestoreInitializer {
         }
         
         println("✅ ${materials.size} materiales cargados con IDs limpios (MAT001-MAT038)")
-        
-        // Crear usuarios de ejemplo
-        loadSampleUsers(db)
-        
-        // Crear proveedores de ejemplo
-        loadSampleProviders(db)
-        
-        // Crear proyectos de ejemplo
-        loadSampleProjects(db)
-        
-        // Crear movimientos de ejemplo
-        loadSampleMovements(db)
-        
-        // Crear transferencias de ejemplo
-        loadSampleTransfers(db)
     }
     
     private suspend fun loadSampleUsers(db: FirebaseFirestore) {
@@ -178,13 +241,7 @@ object FirestoreInitializer {
     
     private suspend fun loadSampleProviders(db: FirebaseFirestore) {
         try {
-            // Verificar si ya existen proveedores
-            val existing = db.collection("providers").limit(1).get().await()
-            if (!existing.isEmpty) {
-                println("✅ Proveedores ya existen en Firestore")
-                return
-            }
-            
+            println("🔄 Creando proveedores de ejemplo...")
             val providers = listOf(
                 hashMapOf(
                     "nombre" to "Construcciones ABC S.A.C.",
@@ -256,15 +313,19 @@ object FirestoreInitializer {
                 )
             )
             
+            var createdCount = 0
             providers.forEach { provider ->
                 try {
                     db.collection("providers").add(provider).await()
+                    createdCount++
+                    println("  ✅ Proveedor creado: ${provider["nombre"]}")
                 } catch (e: Exception) {
-                    println("❌ Error al crear proveedor: ${e.message}")
+                    println("❌ Error al crear proveedor ${provider["nombre"]}: ${e.message}")
+                    e.printStackTrace()
                 }
             }
             
-            println("✅ ${providers.size} proveedores creados exitosamente")
+            println("✅ $createdCount/${providers.size} proveedores creados exitosamente")
         } catch (e: Exception) {
             println("❌ Error creando proveedores: ${e.message}")
         }
@@ -272,13 +333,7 @@ object FirestoreInitializer {
     
     private suspend fun loadSampleProjects(db: FirebaseFirestore) {
         try {
-            // Verificar si ya existen proyectos
-            val existing = db.collection("projects").limit(1).get().await()
-            if (!existing.isEmpty) {
-                println("✅ Proyectos ya existen en Firestore")
-                return
-            }
-            
+            println("🔄 Creando proyectos de ejemplo...")
             val projects = listOf(
                 hashMapOf(
                     "codigo" to "PROJ001",
@@ -336,10 +391,13 @@ object FirestoreInitializer {
                 )
             )
             
+            var createdCount = 0
             projects.forEach { project ->
                 try {
                     val docRef = db.collection("projects").document()
                     docRef.set(project).await()
+                    createdCount++
+                    println("  ✅ Proyecto creado: ${project["nombre"]}")
                     
                     // Crear actividad inicial
                     db.collection("project_activities").add(
@@ -353,11 +411,12 @@ object FirestoreInitializer {
                         )
                     ).await()
                 } catch (e: Exception) {
-                    println("❌ Error al crear proyecto: ${e.message}")
+                    println("❌ Error al crear proyecto ${project["nombre"]}: ${e.message}")
+                    e.printStackTrace()
                 }
             }
             
-            println("✅ ${projects.size} proyectos creados exitosamente")
+            println("✅ $createdCount/${projects.size} proyectos creados exitosamente")
         } catch (e: Exception) {
             println("❌ Error creando proyectos: ${e.message}")
         }
@@ -365,13 +424,7 @@ object FirestoreInitializer {
     
     private suspend fun loadSampleMovements(db: FirebaseFirestore) {
         try {
-            // Verificar si ya existen movimientos
-            val existing = db.collection("movements").limit(1).get().await()
-            if (!existing.isEmpty) {
-                println("✅ Movimientos ya existen en Firestore")
-                return
-            }
-            
+            println("🔄 Creando movimientos de ejemplo...")
             // Crear algunos movimientos de ejemplo (entradas y salidas)
             val movements = listOf(
                 hashMapOf(
@@ -412,15 +465,18 @@ object FirestoreInitializer {
                 )
             )
             
+            var createdCount = 0
             movements.forEach { movement ->
                 try {
                     db.collection("movements").add(movement).await()
+                    createdCount++
                 } catch (e: Exception) {
                     println("❌ Error al crear movimiento: ${e.message}")
+                    e.printStackTrace()
                 }
             }
             
-            println("✅ ${movements.size} movimientos creados exitosamente")
+            println("✅ $createdCount/${movements.size} movimientos creados exitosamente")
         } catch (e: Exception) {
             println("❌ Error creando movimientos: ${e.message}")
         }
@@ -428,13 +484,7 @@ object FirestoreInitializer {
     
     private suspend fun loadSampleTransfers(db: FirebaseFirestore) {
         try {
-            // Verificar si ya existen transferencias
-            val existing = db.collection("transfers").limit(1).get().await()
-            if (!existing.isEmpty) {
-                println("✅ Transferencias ya existen en Firestore")
-                return
-            }
-            
+            println("🔄 Creando transferencias de ejemplo...")
             val transfers = listOf(
                 hashMapOf(
                     "materialId" to "MAT001",
@@ -466,15 +516,19 @@ object FirestoreInitializer {
                 )
             )
             
+            var createdCount = 0
             transfers.forEach { transfer ->
                 try {
                     db.collection("transfers").add(transfer).await()
+                    createdCount++
+                    println("  ✅ Transferencia creada: ${transfer["materialNombre"]}")
                 } catch (e: Exception) {
                     println("❌ Error al crear transferencia: ${e.message}")
+                    e.printStackTrace()
                 }
             }
             
-            println("✅ ${transfers.size} transferencias creadas exitosamente")
+            println("✅ $createdCount/${transfers.size} transferencias creadas exitosamente")
         } catch (e: Exception) {
             println("❌ Error creando transferencias: ${e.message}")
         }

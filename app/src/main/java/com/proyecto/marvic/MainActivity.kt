@@ -83,18 +83,20 @@ class MainActivity : ComponentActivity() {
         // Datos iniciales en segundo plano
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Inicializar datos de prueba (materiales, movimientos, etc.)
+                // Inicializar TODAS las colecciones (cada una verifica si está vacía)
+                // Esto asegura que proveedores, proyectos, transferencias, etc. se creen
                 FirestoreInitializer.initializeIfEmpty(forceReload = false)
                 
                 // Inicializar roles si no existen
                 FirestoreRoleRepository().initializeDefaultRoles()
                 
-                // Inicializar usuarios de prueba si no existen
+                // Inicializar usuarios con UserInitializer (usa IDs específicos)
                 UserInitializer.initializeDefaultUsers()
                 
-                println("✅ Inicialización automática completada")
+                println("✅ Inicialización automática completada - Todas las colecciones verificadas")
             } catch (e: Exception) {
                 println("❌ Error en inicialización: ${e.message}")
+                e.printStackTrace()
             }
         }
         
