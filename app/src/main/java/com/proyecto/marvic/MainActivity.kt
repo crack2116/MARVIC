@@ -40,7 +40,6 @@ import com.proyecto.marvic.ui.screens.ProjectsScreen
 import com.proyecto.marvic.ui.screens.TransfersScreen
 import com.proyecto.marvic.ui.screens.MaterialGalleryScreen
 import com.proyecto.marvic.ui.screens.AnalyticsScreen
-import com.proyecto.marvic.ui.screens.ProfileScreen
 import com.proyecto.marvic.viewmodel.InventoryViewModel
 import com.proyecto.marvic.data.FirebaseInitializer
 import com.proyecto.marvic.data.FirestoreInitializer

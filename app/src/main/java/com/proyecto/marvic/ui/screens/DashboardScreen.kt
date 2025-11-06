@@ -133,7 +133,7 @@ fun DashboardScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(Icons.Default.Analytics, contentDescription = null, tint = MarvicOrange, modifier = Modifier.size(20.dp))
-                                    Text("Asistente de IA", color = Color.White)
+                                    Text("Analytics", color = Color.White)
                                 }
                             },
                             onClick = {

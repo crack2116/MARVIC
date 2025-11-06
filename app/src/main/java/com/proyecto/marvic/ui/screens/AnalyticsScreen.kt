@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,48 +13,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.proyecto.marvic.ui.theme.MarvicOrange
-import com.proyecto.marvic.viewmodel.AssistantViewModel
-import kotlinx.coroutines.launch
+import com.proyecto.marvic.viewmodel.AnalyticsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
-    vm: AssistantViewModel = viewModel(),
+    vm: AnalyticsViewModel = viewModel(),
     onBack: () -> Unit = {}
 ) {
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-    
-    // Scroll al final cuando hay nuevos mensajes
-    LaunchedEffect(vm.messages.size) {
-        if (vm.messages.isNotEmpty()) {
-            coroutineScope.launch {
-                listState.animateScrollToItem(vm.messages.size - 1)
-            }
-        }
+    LaunchedEffect(Unit) {
+        vm.loadAnalytics()
     }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Asistente de IA", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Analytics & Métricas") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Volver", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, "Volver")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { vm.clearChat() }) {
-                        Icon(Icons.Default.DeleteSweep, "Limpiar chat", tint = Color.White)
+                    IconButton(onClick = { vm.loadAnalytics() }) {
+                        Icon(Icons.Default.Refresh, "Refrescar")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MarvicOrange,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
@@ -63,223 +52,368 @@ fun AnalyticsScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF121212))
-                .padding(padding)
-        ) {
-            // Área de mensajes
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
+        if (vm.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
             ) {
-                if (vm.messages.isEmpty()) {
-                    item {
-                        WelcomeMessage()
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF1a1a2e))
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Título
+                item {
+                    Text(
+                        "Métricas del Sistema",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                // KPIs principales
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MetricCard(
+                            title = "Materiales",
+                            value = vm.analytics.totalMaterials.toString(),
+                            icon = Icons.Default.Inventory,
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFF4CAF50)
+                        )
+                        MetricCard(
+                            title = "Stock Total",
+                            value = vm.analytics.totalStock.toString(),
+                            icon = Icons.Default.Storage,
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFF2196F3)
+                        )
                     }
                 }
                 
-                items(vm.messages) { message ->
-                    ChatBubble(message = message)
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        MetricCard(
+                            title = "Bajo Stock",
+                            value = vm.analytics.lowStockCount.toString(),
+                            icon = Icons.Default.Warning,
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFFFF9800)
+                        )
+                        MetricCard(
+                            title = "Movimientos",
+                            value = vm.analytics.totalMovements.toString(),
+                            icon = Icons.Default.SwapHoriz,
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFF9C27B0)
+                        )
+                    }
                 }
                 
-                if (vm.isLoading) {
-                    item {
-                        TypingIndicator()
+                // Valor total
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF16213e)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    "Valor Total del Inventario",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    "S/ ${String.format("%.2f", vm.analytics.totalValue)}",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "Precio promedio: S/ ${String.format("%.2f", vm.analytics.avgPrice)}",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Icon(
+                                Icons.Default.AttachMoney,
+                                contentDescription = null,
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+                }
+                
+                // Top Categorías
+                item {
+                    Text(
+                        "Top Categorías",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                
+                items(vm.analytics.topCategories) { (category, count) ->
+                    CategoryItem(category, count)
+                }
+                
+                // Estadísticas de Caché
+                item {
+                    Text(
+                        "Estadísticas de Caché",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+                
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF16213e)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            vm.analytics.cacheStats.forEach { (type, count) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(type, color = Color.Gray)
+                                    Text(
+                                        "$count items",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            
+                            Spacer(Modifier.height(12.dp))
+                            
+                            Button(
+                                onClick = { vm.clearCache() },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFF5722)
+                                )
+                            ) {
+                                Icon(Icons.Default.DeleteSweep, null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Limpiar Caché")
+                            }
+                        }
+                    }
+                }
+                
+                // Estadísticas de Rendimiento
+                item {
+                    Text(
+                        "Top 5 Operaciones Lentas",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+                
+                items(vm.analytics.performanceStats) { (operation, duration) ->
+                    PerformanceItem(operation, duration)
+                }
+                
+                // Botón de limpiar métricas
+                item {
+                    OutlinedButton(
+                        onClick = { vm.clearPerformanceMetrics() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Speed, null, tint = Color.White)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Limpiar Métricas de Rendimiento", color = Color.White)
+                    }
+                }
+                
+                // Actividad Reciente
+                item {
+                    Text(
+                        "Actividad Reciente",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+                
+                items(vm.analytics.recentActivity) { activity ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF16213e)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (activity.startsWith("Entrada")) 
+                                    Icons.Default.ArrowUpward 
+                                else 
+                                    Icons.Default.ArrowDownward,
+                                contentDescription = null,
+                                tint = if (activity.startsWith("Entrada")) 
+                                    Color(0xFF4CAF50) 
+                                else 
+                                    Color(0xFFF44336)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(activity, color = Color.White)
+                        }
                     }
                 }
             }
-            
-            // Área de entrada
-            ChatInputBar(
-                userInput = vm.userInput,
-                onInputChange = { vm.updateUserInput(it) },
-                onSend = { vm.sendMessage() },
-                enabled = !vm.isLoading && vm.userInput.isNotBlank()
-            )
         }
     }
 }
 
 @Composable
-fun WelcomeMessage() {
+fun MetricCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    color: Color
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
-        shape = RoundedCornerShape(16.dp)
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF16213e)
+        )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                Icons.Default.SmartToy,
+                icon,
                 contentDescription = null,
-                tint = MarvicOrange,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                "¡Hola! Soy tu Asistente de IA",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                tint = color,
+                modifier = Modifier.size(32.dp)
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Puedo ayudarte con:\n" +
-                "• Consultas sobre inventario\n" +
-                "• Análisis de movimientos\n" +
-                "• Recomendaciones de stock\n" +
-                "• Información sobre materiales",
-                color = Color(0xFFBDBDBD),
-                fontSize = 14.sp,
-                lineHeight = 20.sp
-            )
-        }
-    }
-}
-
-@Composable
-fun ChatBubble(message: com.proyecto.marvic.viewmodel.ChatMessage) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (message.isUser) Arrangement.End else Arrangement.Start
-    ) {
-        if (!message.isUser) {
-            Icon(
-                Icons.Default.SmartToy,
-                contentDescription = null,
-                tint = MarvicOrange,
-                modifier = Modifier
-                    .size(32.dp)
-                    .padding(end = 8.dp, top = 4.dp)
-            )
-        }
-        
-        Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (message.isUser) MarvicOrange else Color(0xFF2A2A2A)
-            ),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (message.isUser) 16.dp else 4.dp,
-                bottomEnd = if (message.isUser) 4.dp else 16.dp
-            )
-        ) {
-            Text(
-                text = message.text,
+                value,
+                style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(12.dp),
-                lineHeight = 20.sp
+                fontWeight = FontWeight.Bold
             )
-        }
-        
-        if (message.isUser) {
-            Icon(
-                Icons.Default.Person,
-                contentDescription = null,
-                tint = Color(0xFFBDBDBD),
-                modifier = Modifier
-                    .size(32.dp)
-                    .padding(start = 8.dp, top = 4.dp)
+            Text(
+                title,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
             )
         }
     }
 }
 
 @Composable
-fun TypingIndicator() {
-    Row(
+fun CategoryItem(category: String, count: Int) {
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            Icons.Default.SmartToy,
-            contentDescription = null,
-            tint = MarvicOrange,
-            modifier = Modifier
-                .size(32.dp)
-                .padding(end = 8.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF16213e)
         )
-        Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A)),
-            shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                repeat(3) { index ->
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(8.dp),
-                        color = MarvicOrange,
-                        strokeWidth = 2.dp
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF4CAF50).copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Category,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF50)
                     )
                 }
+                Spacer(Modifier.width(12.dp))
+                Text(category, color = Color.White, fontWeight = FontWeight.Medium)
             }
+            Text(
+                "$count items",
+                color = Color(0xFF4CAF50),
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
 
 @Composable
-fun ChatInputBar(
-    userInput: String,
-    onInputChange: (String) -> Unit,
-    onSend: () -> Unit,
-    enabled: Boolean
-) {
-    Surface(
+fun PerformanceItem(operation: String, duration: Long) {
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF1A1A1A),
-        shadowElevation = 8.dp
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF16213e)
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
-                value = userInput,
-                onValueChange = onInputChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Escribe tu pregunta...", color = Color(0xFFBDBDBD)) },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = MarvicOrange,
-                    unfocusedBorderColor = Color(0xFF424242),
-                    cursorColor = MarvicOrange
-                ),
-                shape = RoundedCornerShape(24.dp),
-                maxLines = 3,
-                singleLine = false
+            Text(
+                operation.replace("_", " ").capitalize(),
+                color = Color.White,
+                modifier = Modifier.weight(1f)
             )
-            
-            FloatingActionButton(
-                onClick = onSend,
-                modifier = Modifier.size(48.dp),
-                containerColor = if (enabled) MarvicOrange else Color(0xFF424242),
-                contentColor = Color.White
-            ) {
-                if (enabled) {
-                    Icon(Icons.Default.Send, contentDescription = "Enviar")
-                } else {
-                    Icon(Icons.Default.Send, contentDescription = "Enviar", tint = Color(0xFF757575))
-                }
-            }
+            Text(
+                "${duration}ms",
+                color = when {
+                    duration < 100 -> Color(0xFF4CAF50)
+                    duration < 500 -> Color(0xFFFF9800)
+                    else -> Color(0xFFF44336)
+                },
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
+

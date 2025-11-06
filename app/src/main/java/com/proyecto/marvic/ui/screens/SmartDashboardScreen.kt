@@ -384,7 +384,7 @@ fun SmartDashboardScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(Icons.Default.Analytics, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                Text("Asistente de IA", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("Analytics", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
