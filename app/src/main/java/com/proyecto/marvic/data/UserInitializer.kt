@@ -10,21 +10,14 @@ object UserInitializer {
     
     suspend fun initializeDefaultUsers() {
         try {
-            // Verificar si ya existen usuarios
-            val existing = usersCollection.limit(1).get().await()
-            if (!existing.isEmpty) {
-                println("✅ Usuarios ya existen en Firestore")
-                return // Ya existen usuarios
-            }
+            println("🔄 Verificando usuarios en Firestore...")
             
-            println("🔄 Inicializando usuarios en Firestore...")
-            
-            // Crear usuarios por defecto
+            // Crear usuarios por defecto con nombres correctos
             val defaultUsers = listOf(
-                // Almacenero
+                // Almacenero - José Martínez
                 hashMapOf(
-                    "nombre" to "Juan",
-                    "apellido" to "Pérez",
+                    "nombre" to "José",
+                    "apellido" to "Martínez",
                     "email" to "almacenero@marvic.com",
                     "rol" to "almacenero",
                     "activo" to true,
@@ -36,7 +29,7 @@ object UserInitializer {
                     "fechaCreacion" to System.currentTimeMillis(),
                     "ultimoAcceso" to System.currentTimeMillis()
                 ),
-                // Jefe de Logística
+                // Jefe de Logística - María González
                 hashMapOf(
                     "nombre" to "María",
                     "apellido" to "González",
@@ -55,7 +48,7 @@ object UserInitializer {
                     "fechaCreacion" to System.currentTimeMillis(),
                     "ultimoAcceso" to System.currentTimeMillis()
                 ),
-                // Gerente
+                // Gerente - Carlos Rodríguez
                 hashMapOf(
                     "nombre" to "Carlos",
                     "apellido" to "Rodríguez",
@@ -80,6 +73,39 @@ object UserInitializer {
                 )
             )
             
+            // Verificar si ya existen usuarios
+            val existing = usersCollection.limit(1).get().await()
+            if (!existing.isEmpty) {
+                println("✅ Usuarios ya existen en Firestore - Verificando si necesitan actualización...")
+                // Verificar y crear/actualizar usuarios específicos
+                for (userData in defaultUsers) {
+                    val email = userData["email"] as String
+                    val userId = email.replace("@", "_").replace(".", "_")
+                    val doc = usersCollection.document(userId).get().await()
+                    
+                    if (!doc.exists()) {
+                        usersCollection.document(userId).set(userData).await()
+                        println("✅ Usuario creado/actualizado: $email - ${userData["nombre"]} ${userData["apellido"]}")
+                    } else {
+                        // Actualizar datos si existen pero no coinciden
+                        val existingNombre = doc.getString("nombre") ?: ""
+                        val existingApellido = doc.getString("apellido") ?: ""
+                        val expectedNombre = userData["nombre"] as String
+                        val expectedApellido = userData["apellido"] as String
+                        
+                        if (existingNombre != expectedNombre || existingApellido != expectedApellido) {
+                            usersCollection.document(userId).set(userData).await()
+                            println("✅ Usuario actualizado: $email - $expectedNombre $expectedApellido")
+                        } else {
+                            println("ℹ️ Usuario ya existe correcto: $email")
+                        }
+                    }
+                }
+                return
+            }
+            
+            println("🔄 Inicializando usuarios en Firestore...")
+            
             // Insertar usuarios en Firestore
             for (userData in defaultUsers) {
                 val email = userData["email"] as String
@@ -87,10 +113,10 @@ object UserInitializer {
                 val userId = email.replace("@", "_").replace(".", "_")
                 
                 usersCollection.document(userId).set(userData).await()
-                println("✅ Usuario creado: $email")
+                println("✅ Usuario creado: $email - ${userData["nombre"]} ${userData["apellido"]}")
             }
             
-            println("✅ Todos los usuarios inicializados correctamente")
+            println("✅ Todos los usuarios inicializados correctamente (${defaultUsers.size} usuarios)")
             
         } catch (e: Exception) {
             println("❌ Error inicializando usuarios: ${e.message}")

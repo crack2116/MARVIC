@@ -11,18 +11,18 @@ object FirestoreInitializer {
     suspend fun initializeIfEmpty(forceReload: Boolean = false) {
         val db = FirebaseFirestore.getInstance()
         
-        try {
-            // Inicializar cada colección independientemente
-            initializeMaterials(db, forceReload)
-            initializeUsers(db, forceReload)
-            initializeProviders(db, forceReload)
-            initializeProjects(db, forceReload)
-            initializeMovements(db, forceReload)
-            initializeTransfers(db, forceReload)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            println("❌ Error en inicialización: ${e.message}")
-        }
+        println("🚀 Iniciando inicialización de colecciones (forceReload=$forceReload)...")
+        
+        // Inicializar cada colección independientemente
+        // Cada una maneja sus propios errores para no bloquear a las demás
+        initializeMaterials(db, forceReload)
+        initializeUsers(db, forceReload)
+        initializeProviders(db, forceReload)
+        initializeProjects(db, forceReload)
+        initializeMovements(db, forceReload)
+        initializeTransfers(db, forceReload)
+        
+        println("✅ Proceso de inicialización completado")
     }
     
     private suspend fun initializeMaterials(db: FirebaseFirestore, forceReload: Boolean) {
@@ -43,69 +43,84 @@ object FirestoreInitializer {
         try {
             val snapshot = db.collection("users").limit(1).get().await()
             if (snapshot.isEmpty || forceReload) {
-                println("🔄 Inicializando usuarios...")
+                println("🔄 Inicializando usuarios desde FirestoreInitializer...")
+                // NOTA: UserInitializer se ejecuta primero en MainActivity, 
+                // así que esta función solo se ejecuta si no hay usuarios
                 loadSampleUsers(db)
             } else {
-                println("✅ Usuarios ya existen")
+                println("✅ Usuarios ya existen (inicializados por UserInitializer)")
             }
         } catch (e: Exception) {
             println("❌ Error inicializando usuarios: ${e.message}")
+            e.printStackTrace()
         }
     }
     
     private suspend fun initializeProviders(db: FirebaseFirestore, forceReload: Boolean) {
         try {
+            println("🔍 Verificando colección 'providers'...")
             val snapshot = db.collection("providers").limit(1).get().await()
             if (snapshot.isEmpty || forceReload) {
                 println("🔄 Inicializando proveedores...")
                 loadSampleProviders(db)
+                println("✅ Proveedores inicializados correctamente")
             } else {
-                println("✅ Proveedores ya existen")
+                println("✅ Proveedores ya existen (${snapshot.size()} documentos encontrados)")
             }
         } catch (e: Exception) {
             println("❌ Error inicializando proveedores: ${e.message}")
+            e.printStackTrace()
         }
     }
     
     private suspend fun initializeProjects(db: FirebaseFirestore, forceReload: Boolean) {
         try {
+            println("🔍 Verificando colección 'projects'...")
             val snapshot = db.collection("projects").limit(1).get().await()
             if (snapshot.isEmpty || forceReload) {
                 println("🔄 Inicializando proyectos...")
                 loadSampleProjects(db)
+                println("✅ Proyectos inicializados correctamente")
             } else {
-                println("✅ Proyectos ya existen")
+                println("✅ Proyectos ya existen (${snapshot.size()} documentos encontrados)")
             }
         } catch (e: Exception) {
             println("❌ Error inicializando proyectos: ${e.message}")
+            e.printStackTrace()
         }
     }
     
     private suspend fun initializeMovements(db: FirebaseFirestore, forceReload: Boolean) {
         try {
+            println("🔍 Verificando colección 'movements'...")
             val snapshot = db.collection("movements").limit(1).get().await()
             if (snapshot.isEmpty || forceReload) {
                 println("🔄 Inicializando movimientos...")
                 loadSampleMovements(db)
+                println("✅ Movimientos inicializados correctamente")
             } else {
-                println("✅ Movimientos ya existen")
+                println("✅ Movimientos ya existen (${snapshot.size()} documentos encontrados)")
             }
         } catch (e: Exception) {
             println("❌ Error inicializando movimientos: ${e.message}")
+            e.printStackTrace()
         }
     }
     
     private suspend fun initializeTransfers(db: FirebaseFirestore, forceReload: Boolean) {
         try {
+            println("🔍 Verificando colección 'transfers'...")
             val snapshot = db.collection("transfers").limit(1).get().await()
             if (snapshot.isEmpty || forceReload) {
                 println("🔄 Inicializando transferencias...")
                 loadSampleTransfers(db)
+                println("✅ Transferencias inicializadas correctamente")
             } else {
-                println("✅ Transferencias ya existen")
+                println("✅ Transferencias ya existen (${snapshot.size()} documentos encontrados)")
             }
         } catch (e: Exception) {
             println("❌ Error inicializando transferencias: ${e.message}")
+            e.printStackTrace()
         }
     }
     
@@ -187,13 +202,14 @@ object FirestoreInitializer {
     private suspend fun loadSampleUsers(db: FirebaseFirestore) {
         val currentTimestamp = Timestamp.now()
         
+        // Solo 3 usuarios: almacenero, jefe, gerente
         val sampleUsers = listOf(
             User(
-                email = "gerente@marvic.com",
-                nombre = "Carlos",
-                apellido = "Rodríguez",
-                rol = "gerente",
-                permisos = listOf("movement_create", "movement_view", "inventory_search", "reports_view", "reports_export", "users_manage", "settings_configure", "notifications_manage")
+                email = "almacenero@marvic.com",
+                nombre = "José",
+                apellido = "Martínez", 
+                rol = "almacenero",
+                permisos = listOf("movement_create", "movement_view", "inventory_search")
             ),
             User(
                 email = "jefe@marvic.com", 
@@ -203,25 +219,11 @@ object FirestoreInitializer {
                 permisos = listOf("movement_create", "movement_view", "inventory_search", "reports_view", "reports_export", "notifications_manage")
             ),
             User(
-                email = "almacenero@marvic.com",
-                nombre = "José",
-                apellido = "Martínez", 
-                rol = "almacenero",
-                permisos = listOf("movement_create", "movement_view", "inventory_search")
-            ),
-            User(
-                email = "supervisor@marvic.com",
-                nombre = "Ana",
-                apellido = "López",
-                rol = "supervisor",
-                permisos = listOf("movement_view", "inventory_search", "reports_view")
-            ),
-            User(
-                email = "auditor@marvic.com",
-                nombre = "Luis",
-                apellido = "Fernández",
-                rol = "auditor", 
-                permisos = listOf("inventory_search", "reports_view", "reports_export")
+                email = "gerente@marvic.com",
+                nombre = "Carlos",
+                apellido = "Rodríguez",
+                rol = "gerente",
+                permisos = listOf("movement_create", "movement_view", "inventory_search", "reports_view", "reports_export", "users_manage", "settings_configure", "notifications_manage")
             )
         )
         
@@ -244,72 +246,72 @@ object FirestoreInitializer {
             println("🔄 Creando proveedores de ejemplo...")
             val providers = listOf(
                 hashMapOf(
-                    "nombre" to "Construcciones ABC S.A.C.",
-                    "razonSocial" to "Construcciones ABC S.A.C.",
+                    "nombre" to "Cementos Unidos del Perú S.A.C.",
+                    "razonSocial" to "Cementos Unidos del Perú S.A.C.",
                     "ruc" to "20123456789",
-                    "direccion" to "Av. Los Constructores 123, Lima",
-                    "telefono" to "987654321",
-                    "email" to "contacto@construccionesabc.com",
-                    "contactoPrincipal" to "Juan Pérez",
+                    "direccion" to "Av. Javier Prado Este 4200, San Borja, Lima",
+                    "telefono" to "01-6178000",
+                    "email" to "ventas@cementosunidos.pe",
+                    "contactoPrincipal" to "Roberto Mendoza",
                     "categorias" to listOf("Cementos", "Agregados", "Fierros"),
+                    "calificacion" to 4.7,
+                    "activo" to true,
+                    "notas" to "Proveedor líder en materiales de construcción, entrega rápida y productos de calidad",
+                    "fechaCreacion" to System.currentTimeMillis(),
+                    "fechaActualizacion" to System.currentTimeMillis(),
+                    "totalCompras" to 285000.0,
+                    "numeroCompras" to 28
+                ),
+                hashMapOf(
+                    "nombre" to "Ferretería Industrial San Martín",
+                    "razonSocial" to "Ferretería Industrial San Martín E.I.R.L.",
+                    "ruc" to "20456789012",
+                    "direccion" to "Av. Argentina 3456, Callao, Lima",
+                    "telefono" to "01-4296789",
+                    "email" to "contacto@ferreteriasanmartin.pe",
+                    "contactoPrincipal" to "Carmen Villanueva",
+                    "categorias" to listOf("Ferretería", "Herramientas", "Eléctricos", "Accesorios"),
                     "calificacion" to 4.5,
                     "activo" to true,
-                    "notas" to "Proveedor principal de materiales de construcción",
+                    "notas" to "Especialistas en herramientas industriales y ferretería, amplio catálogo",
+                    "fechaCreacion" to System.currentTimeMillis(),
+                    "fechaActualizacion" to System.currentTimeMillis(),
+                    "totalCompras" to 165000.0,
+                    "numeroCompras" to 35
+                ),
+                hashMapOf(
+                    "nombre" to "Sanitarios y Cerámicos Premium S.A.",
+                    "razonSocial" to "Sanitarios y Cerámicos Premium S.A.",
+                    "ruc" to "20345678901",
+                    "direccion" to "Av. La Marina 2890, San Miguel, Lima",
+                    "telefono" to "01-5678901",
+                    "email" to "info@sanitariospremium.pe",
+                    "contactoPrincipal" to "Luis Ramírez",
+                    "categorias" to listOf("Sanitarios", "Acabados", "Tuberías", "Cerámicos"),
+                    "calificacion" to 4.9,
+                    "activo" to true,
+                    "notas" to "Proveedor premium de sanitarios y acabados de alta calidad, productos importados",
+                    "fechaCreacion" to System.currentTimeMillis(),
+                    "fechaActualizacion" to System.currentTimeMillis(),
+                    "totalCompras" to 198000.0,
+                    "numeroCompras" to 18
+                ),
+                hashMapOf(
+                    "nombre" to "Maderas del Pacífico S.R.L.",
+                    "razonSocial" to "Maderas del Pacífico S.R.L.",
+                    "ruc" to "20567890123",
+                    "direccion" to "Km 22.5 Carretera Panamericana Norte, Puente Piedra, Lima",
+                    "telefono" to "01-5432109",
+                    "email" to "ventas@maderaspacifico.pe",
+                    "contactoPrincipal" to "Patricia Torres",
+                    "categorias" to listOf("Maderas", "Triplay", "Tableros"),
+                    "calificacion" to 4.3,
+                    "activo" to true,
+                    "notas" to "Distribuidor mayorista de maderas, triplay y tableros, precios competitivos",
                     "fechaCreacion" to System.currentTimeMillis(),
                     "fechaActualizacion" to System.currentTimeMillis(),
                     "totalCompras" to 125000.0,
                     "numeroCompras" to 15
-                ),
-                hashMapOf(
-                    "nombre" to "Ferretería El Constructor",
-                    "razonSocial" to "Ferretería El Constructor E.I.R.L.",
-                    "ruc" to "20456789012",
-                    "direccion" to "Jr. Las Herramientas 456, Lima",
-                    "telefono" to "987654322",
-                    "email" to "ventas@ferreteria.com",
-                    "contactoPrincipal" to "María García",
-                    "categorias" to listOf("Ferretería", "Herramientas", "Eléctricos"),
-                    "calificacion" to 4.2,
-                    "activo" to true,
-                    "notas" to "Especialista en herramientas y ferretería",
-                    "fechaCreacion" to System.currentTimeMillis(),
-                    "fechaActualizacion" to System.currentTimeMillis(),
-                    "totalCompras" to 85000.0,
-                    "numeroCompras" to 22
-                ),
-                hashMapOf(
-                    "nombre" to "Sanitarios y Acabados S.A.",
-                    "razonSocial" to "Sanitarios y Acabados S.A.",
-                    "ruc" to "20345678901",
-                    "direccion" to "Av. Los Baños 789, Lima",
-                    "telefono" to "987654323",
-                    "email" to "info@sanitarios.com",
-                    "contactoPrincipal" to "Carlos López",
-                    "categorias" to listOf("Sanitarios", "Acabados", "Tuberías"),
-                    "calificacion" to 4.8,
-                    "activo" to true,
-                    "notas" to "Proveedor de alta calidad en sanitarios",
-                    "fechaCreacion" to System.currentTimeMillis(),
-                    "fechaActualizacion" to System.currentTimeMillis(),
-                    "totalCompras" to 95000.0,
-                    "numeroCompras" to 12
-                ),
-                hashMapOf(
-                    "nombre" to "Maderas del Norte",
-                    "razonSocial" to "Maderas del Norte S.R.L.",
-                    "ruc" to "20567890123",
-                    "direccion" to "Km 15 Carretera Norte, Lima",
-                    "telefono" to "987654324",
-                    "email" to "ventas@maderasnorte.com",
-                    "contactoPrincipal" to "Ana Martínez",
-                    "categorias" to listOf("Maderas", "Triplay"),
-                    "calificacion" to 4.0,
-                    "activo" to true,
-                    "notas" to "Distribuidor de maderas y triplay",
-                    "fechaCreacion" to System.currentTimeMillis(),
-                    "fechaActualizacion" to System.currentTimeMillis(),
-                    "totalCompras" to 65000.0,
-                    "numeroCompras" to 8
                 )
             )
             
@@ -334,60 +336,226 @@ object FirestoreInitializer {
     private suspend fun loadSampleProjects(db: FirebaseFirestore) {
         try {
             println("🔄 Creando proyectos de ejemplo...")
+            val currentTime = System.currentTimeMillis()
+            val day = 24L * 60 * 60 * 1000
+            
             val projects = listOf(
                 hashMapOf(
                     "codigo" to "PROJ001",
                     "nombre" to "Edificio Residencial San Miguel",
-                    "descripcion" to "Construcción de edificio residencial de 5 pisos",
-                    "cliente" to "Inmobiliaria XYZ",
-                    "ubicacion" to "San Miguel, Lima",
+                    "descripcion" to "Construcción de edificio residencial de 5 pisos con 20 departamentos",
+                    "cliente" to "Inmobiliaria San Miguel S.A.",
+                    "ubicacion" to "Av. Brasil 1500, San Miguel, Lima",
                     "responsable" to "María González",
                     "estado" to "EN_CURSO",
-                    "fechaInicio" to System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000), // Hace 30 días
-                    "fechaFinPrevista" to System.currentTimeMillis() + (180L * 24 * 60 * 60 * 1000), // En 180 días
-                    "presupuesto" to 2500000.0,
-                    "gastoReal" to 850000.0,
-                    "porcentajeAvance" to 35,
+                    "fechaInicio" to currentTime - (45L * day),
+                    "fechaFinPrevista" to currentTime + (135L * day),
+                    "presupuesto" to 3200000.0,
+                    "gastoReal" to 1250000.0,
+                    "porcentajeAvance" to 38,
                     "prioridad" to "ALTA",
-                    "notas" to "Proyecto en ejecución, todo según cronograma",
-                    "fechaCreacion" to System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000),
-                    "fechaActualizacion" to System.currentTimeMillis()
+                    "notas" to "Proyecto en ejecución, estructura en progreso, materiales según plan",
+                    "fechaCreacion" to currentTime - (45L * day),
+                    "fechaActualizacion" to currentTime
                 ),
                 hashMapOf(
                     "codigo" to "PROJ002",
-                    "nombre" to "Centro Comercial Plaza Norte",
-                    "descripcion" to "Ampliación del centro comercial",
-                    "cliente" to "Grupo Retail",
-                    "ubicacion" to "Independencia, Lima",
+                    "nombre" to "Centro Comercial Plaza Norte - Ampliación",
+                    "descripcion" to "Ampliación del centro comercial con 15 locales adicionales",
+                    "cliente" to "Grupo Retail Perú",
+                    "ubicacion" to "Av. Túpac Amaru 5797, Independencia, Lima",
                     "responsable" to "Carlos Rodríguez",
                     "estado" to "PLANIFICACION",
-                    "fechaInicio" to System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000), // En 30 días
-                    "fechaFinPrevista" to System.currentTimeMillis() + (365L * 24 * 60 * 60 * 1000), // En 1 año
-                    "presupuesto" to 5000000.0,
+                    "fechaInicio" to currentTime + (20L * day),
+                    "fechaFinPrevista" to currentTime + (380L * day),
+                    "presupuesto" to 6500000.0,
                     "gastoReal" to 0.0,
                     "porcentajeAvance" to 0,
                     "prioridad" to "MEDIA",
-                    "notas" to "Proyecto en fase de planificación",
-                    "fechaCreacion" to System.currentTimeMillis() - (10L * 24 * 60 * 60 * 1000),
-                    "fechaActualizacion" to System.currentTimeMillis()
+                    "notas" to "Proyecto en fase de planificación y permisos",
+                    "fechaCreacion" to currentTime - (15L * day),
+                    "fechaActualizacion" to currentTime
                 ),
                 hashMapOf(
                     "codigo" to "PROJ003",
                     "nombre" to "Casa Familiar La Molina",
-                    "descripcion" to "Construcción de casa unifamiliar",
-                    "cliente" to "Familia Pérez",
-                    "ubicacion" to "La Molina, Lima",
+                    "descripcion" to "Construcción de casa unifamiliar de 2 pisos, 4 habitaciones",
+                    "cliente" to "Familia Pérez García",
+                    "ubicacion" to "Calle Los Pinos 245, La Molina, Lima",
                     "responsable" to "José Martínez",
                     "estado" to "EN_CURSO",
-                    "fechaInicio" to System.currentTimeMillis() - (60L * 24 * 60 * 60 * 1000), // Hace 60 días
-                    "fechaFinPrevista" to System.currentTimeMillis() + (90L * 24 * 60 * 60 * 1000), // En 90 días
-                    "presupuesto" to 450000.0,
-                    "gastoReal" to 280000.0,
-                    "porcentajeAvance" to 62,
+                    "fechaInicio" to currentTime - (75L * day),
+                    "fechaFinPrevista" to currentTime + (75L * day),
+                    "presupuesto" to 580000.0,
+                    "gastoReal" to 365000.0,
+                    "porcentajeAvance" to 63,
                     "prioridad" to "ALTA",
-                    "notas" to "Buen avance, materiales según plan",
-                    "fechaCreacion" to System.currentTimeMillis() - (60L * 24 * 60 * 60 * 1000),
-                    "fechaActualizacion" to System.currentTimeMillis()
+                    "notas" to "Excelente avance, acabados en progreso, materiales de calidad",
+                    "fechaCreacion" to currentTime - (75L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ004",
+                    "nombre" to "Oficinas Corporativas Miraflores",
+                    "descripcion" to "Edificio de oficinas de 8 pisos en zona empresarial",
+                    "cliente" to "Corporación Inversiones del Sur",
+                    "ubicacion" to "Av. Larco 1200, Miraflores, Lima",
+                    "responsable" to "María González",
+                    "estado" to "EN_CURSO",
+                    "fechaInicio" to currentTime - (120L * day),
+                    "fechaFinPrevista" to currentTime + (180L * day),
+                    "presupuesto" to 8500000.0,
+                    "gastoReal" to 4200000.0,
+                    "porcentajeAvance" to 49,
+                    "prioridad" to "URGENTE",
+                    "notas" to "Proyecto prioritario, cumplimiento de cronograma ajustado",
+                    "fechaCreacion" to currentTime - (120L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ005",
+                    "nombre" to "Condominio Residencial Los Olivos",
+                    "descripcion" to "Complejo de 12 casas en condominio cerrado",
+                    "cliente" to "Inmobiliaria Norte S.A.C.",
+                    "ubicacion" to "Av. Universitaria 7800, Los Olivos, Lima",
+                    "responsable" to "Carlos Rodríguez",
+                    "estado" to "FINALIZADO",
+                    "fechaInicio" to currentTime - (450L * day),
+                    "fechaFinPrevista" to currentTime - (30L * day),
+                    "fechaFinReal" to currentTime - (25L * day),
+                    "presupuesto" to 4200000.0,
+                    "gastoReal" to 3980000.0,
+                    "porcentajeAvance" to 100,
+                    "prioridad" to "MEDIA",
+                    "notas" to "Proyecto finalizado exitosamente, dentro del presupuesto",
+                    "fechaCreacion" to currentTime - (450L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ006",
+                    "nombre" to "Restaurante La Casona Barranco",
+                    "descripcion" to "Remodelación completa de restaurante histórico",
+                    "cliente" to "Restaurantes del Perú S.A.",
+                    "ubicacion" to "Jr. San Martín 340, Barranco, Lima",
+                    "responsable" to "José Martínez",
+                    "estado" to "EN_CURSO",
+                    "fechaInicio" to currentTime - (25L * day),
+                    "fechaFinPrevista" to currentTime + (65L * day),
+                    "presupuesto" to 320000.0,
+                    "gastoReal" to 125000.0,
+                    "porcentajeAvance" to 39,
+                    "prioridad" to "ALTA",
+                    "notas" to "Remodelación en curso, respetando arquitectura original",
+                    "fechaCreacion" to currentTime - (25L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ007",
+                    "nombre" to "Hospital Clínica San Juan",
+                    "descripcion" to "Construcción de pabellón de emergencias y consultorios",
+                    "cliente" to "Clínica San Juan S.A.",
+                    "ubicacion" to "Av. Javier Prado Este 4200, San Borja, Lima",
+                    "responsable" to "María González",
+                    "estado" to "PLANIFICACION",
+                    "fechaInicio" to currentTime + (60L * day),
+                    "fechaFinPrevista" to currentTime + (450L * day),
+                    "presupuesto" to 12500000.0,
+                    "gastoReal" to 0.0,
+                    "porcentajeAvance" to 0,
+                    "prioridad" to "URGENTE",
+                    "notas" to "Proyecto en fase de licitación y aprobación de planos",
+                    "fechaCreacion" to currentTime - (30L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ008",
+                    "nombre" to "Colegio Privado San Patricio",
+                    "descripcion" to "Ampliación con 10 aulas nuevas y laboratorio",
+                    "cliente" to "Colegio San Patricio",
+                    "ubicacion" to "Av. Del Ejército 1800, San Isidro, Lima",
+                    "responsable" to "Carlos Rodríguez",
+                    "estado" to "EN_CURSO",
+                    "fechaInicio" to currentTime - (90L * day),
+                    "fechaFinPrevista" to currentTime + (90L * day),
+                    "presupuesto" to 1800000.0,
+                    "gastoReal" to 950000.0,
+                    "porcentajeAvance" to 53,
+                    "prioridad" to "ALTA",
+                    "notas" to "Construcción en proceso, aulas casi terminadas",
+                    "fechaCreacion" to currentTime - (90L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ009",
+                    "nombre" to "Casa de Playa Punta Hermosa",
+                    "descripcion" to "Construcción de casa de playa de 3 pisos con vista al mar",
+                    "cliente" to "Familia Ramírez",
+                    "ubicacion" to "Calle Las Palmeras 120, Punta Hermosa, Lima",
+                    "responsable" to "José Martínez",
+                    "estado" to "PAUSADO",
+                    "fechaInicio" to currentTime - (180L * day),
+                    "fechaFinPrevista" to currentTime + (60L * day),
+                    "presupuesto" to 750000.0,
+                    "gastoReal" to 320000.0,
+                    "porcentajeAvance" to 42,
+                    "prioridad" to "BAJA",
+                    "notas" to "Proyecto pausado por solicitud del cliente, reanudación pendiente",
+                    "fechaCreacion" to currentTime - (180L * day),
+                    "fechaActualizacion" to currentTime - (30L * day)
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ010",
+                    "nombre" to "Almacén Industrial Lurín",
+                    "descripcion" to "Construcción de almacén de 2000 m² para distribución",
+                    "cliente" to "Logística del Sur S.A.C.",
+                    "ubicacion" to "Km 28 Carretera Panamericana Sur, Lurín, Lima",
+                    "responsable" to "María González",
+                    "estado" to "EN_CURSO",
+                    "fechaInicio" to currentTime - (60L * day),
+                    "fechaFinPrevista" to currentTime + (120L * day),
+                    "presupuesto" to 2800000.0,
+                    "gastoReal" to 1150000.0,
+                    "porcentajeAvance" to 41,
+                    "prioridad" to "ALTA",
+                    "notas" to "Estructura metálica en montaje, techado en progreso",
+                    "fechaCreacion" to currentTime - (60L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ011",
+                    "nombre" to "Hotel Boutique San Isidro",
+                    "descripcion" to "Remodelación completa de hotel de 4 estrellas, 45 habitaciones",
+                    "cliente" to "Hoteles Premium Perú S.A.",
+                    "ubicacion" to "Av. Las Begonias 475, San Isidro, Lima",
+                    "responsable" to "Carlos Rodríguez",
+                    "estado" to "PLANIFICACION",
+                    "fechaInicio" to currentTime + (45L * day),
+                    "fechaFinPrevista" to currentTime + (300L * day),
+                    "presupuesto" to 5200000.0,
+                    "gastoReal" to 0.0,
+                    "porcentajeAvance" to 0,
+                    "prioridad" to "MEDIA",
+                    "notas" to "Proyecto en diseño y aprobación de planos arquitectónicos",
+                    "fechaCreacion" to currentTime - (20L * day),
+                    "fechaActualizacion" to currentTime
+                ),
+                hashMapOf(
+                    "codigo" to "PROJ012",
+                    "nombre" to "Edificio de Departamentos Surco",
+                    "descripcion" to "Edificio de 6 pisos con 18 departamentos, 2 por piso",
+                    "cliente" to "Inmobiliaria Surco S.A.",
+                    "ubicacion" to "Av. Angamos Este 1450, Surco, Lima",
+                    "responsable" to "José Martínez",
+                    "estado" to "EN_CURSO",
+                    "fechaInicio" to currentTime - (150L * day),
+                    "fechaFinPrevista" to currentTime + (90L * day),
+                    "presupuesto" to 4800000.0,
+                    "gastoReal" to 3100000.0,
+                    "porcentajeAvance" to 65,
+                    "prioridad" to "ALTA",
+                    "notas" to "Obra en avanzado estado, instalaciones en progreso",
+                    "fechaCreacion" to currentTime - (150L * day),
+                    "fechaActualizacion" to currentTime
                 )
             )
             
@@ -425,44 +593,42 @@ object FirestoreInitializer {
     private suspend fun loadSampleMovements(db: FirebaseFirestore) {
         try {
             println("🔄 Creando movimientos de ejemplo...")
-            // Crear algunos movimientos de ejemplo (entradas y salidas)
+            val currentTime = System.currentTimeMillis()
+            val day = 24L * 60 * 60 * 1000
+            val hour = 60L * 60 * 1000
+            
+            // Crear 25 movimientos variados (entradas y salidas)
             val movements = listOf(
-                hashMapOf(
-                    "materialId" to "MAT001",
-                    "delta" to 50, // Entrada
-                    "timestamp" to System.currentTimeMillis() - (5L * 24 * 60 * 60 * 1000), // Hace 5 días
-                    "userId" to "almacenero@marvic.com"
-                ),
-                hashMapOf(
-                    "materialId" to "MAT001",
-                    "delta" to -20, // Salida
-                    "timestamp" to System.currentTimeMillis() - (3L * 24 * 60 * 60 * 1000), // Hace 3 días
-                    "userId" to "almacenero@marvic.com"
-                ),
-                hashMapOf(
-                    "materialId" to "MAT008",
-                    "delta" to 100, // Entrada
-                    "timestamp" to System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000), // Hace 7 días
-                    "userId" to "jefe@marvic.com"
-                ),
-                hashMapOf(
-                    "materialId" to "MAT015",
-                    "delta" to -500, // Salida
-                    "timestamp" to System.currentTimeMillis() - (2L * 24 * 60 * 60 * 1000), // Hace 2 días
-                    "userId" to "almacenero@marvic.com"
-                ),
-                hashMapOf(
-                    "materialId" to "MAT025",
-                    "delta" to 30, // Entrada
-                    "timestamp" to System.currentTimeMillis() - (1L * 24 * 60 * 60 * 1000), // Ayer
-                    "userId" to "jefe@marvic.com"
-                ),
-                hashMapOf(
-                    "materialId" to "MAT025",
-                    "delta" to -10, // Salida
-                    "timestamp" to System.currentTimeMillis() - (12L * 60 * 60 * 1000), // Hace 12 horas
-                    "userId" to "almacenero@marvic.com"
-                )
+                hashMapOf("materialId" to "MAT001", "delta" to 50, "timestamp" to currentTime - (5L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT001", "delta" to -20, "timestamp" to currentTime - (3L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT002", "delta" to 80, "timestamp" to currentTime - (7L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT003", "delta" to -15, "timestamp" to currentTime - (4L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT004", "delta" to 25, "timestamp" to currentTime - (6L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT005", "delta" to -10, "timestamp" to currentTime - (2L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT006", "delta" to 60, "timestamp" to currentTime - (8L * day), "userId" to "gerente@marvic.com"),
+                hashMapOf("materialId" to "MAT007", "delta" to -8, "timestamp" to currentTime - (1L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT008", "delta" to 100, "timestamp" to currentTime - (10L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT008", "delta" to -30, "timestamp" to currentTime - (3L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT009", "delta" to 120, "timestamp" to currentTime - (12L * day), "userId" to "gerente@marvic.com"),
+                hashMapOf("materialId" to "MAT010", "delta" to -25, "timestamp" to currentTime - (5L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT011", "delta" to 90, "timestamp" to currentTime - (9L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT012", "delta" to -12, "timestamp" to currentTime - (2L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT013", "delta" to 40, "timestamp" to currentTime - (6L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT014", "delta" to -18, "timestamp" to currentTime - (4L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT015", "delta" to -500, "timestamp" to currentTime - (2L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT015", "delta" to 800, "timestamp" to currentTime - (15L * day), "userId" to "gerente@marvic.com"),
+                hashMapOf("materialId" to "MAT016", "delta" to -300, "timestamp" to currentTime - (3L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT017", "delta" to 200, "timestamp" to currentTime - (11L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT018", "delta" to -45, "timestamp" to currentTime - (1L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT019", "delta" to 70, "timestamp" to currentTime - (8L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT020", "delta" to -35, "timestamp" to currentTime - (4L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT025", "delta" to 30, "timestamp" to currentTime - (1L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT025", "delta" to -10, "timestamp" to currentTime - (12L * hour), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT026", "delta" to 20, "timestamp" to currentTime - (5L * day), "userId" to "jefe@marvic.com"),
+                hashMapOf("materialId" to "MAT027", "delta" to -15, "timestamp" to currentTime - (2L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT028", "delta" to 55, "timestamp" to currentTime - (7L * day), "userId" to "gerente@marvic.com"),
+                hashMapOf("materialId" to "MAT029", "delta" to -22, "timestamp" to currentTime - (3L * day), "userId" to "almacenero@marvic.com"),
+                hashMapOf("materialId" to "MAT030", "delta" to 35, "timestamp" to currentTime - (6L * day), "userId" to "jefe@marvic.com")
             )
             
             var createdCount = 0
@@ -485,43 +651,84 @@ object FirestoreInitializer {
     private suspend fun loadSampleTransfers(db: FirebaseFirestore) {
         try {
             println("🔄 Creando transferencias de ejemplo...")
-            val transfers = listOf(
-                hashMapOf(
-                    "materialId" to "MAT001",
-                    "materialNombre" to "Cemento Portland Tipo I",
-                    "cantidad" to 30,
-                    "origenAlmacen" to "Almacén 1",
-                    "destinoAlmacen" to "Almacén 2",
-                    "responsable" to "María González",
-                    "motivo" to "Distribución de stock",
-                    "estado" to "COMPLETADA",
-                    "fechaSolicitud" to Timestamp.now().toDate().time - (10L * 24 * 60 * 60 * 1000),
-                    "fechaTransferencia" to Timestamp.now().toDate().time - (9L * 24 * 60 * 60 * 1000),
-                    "fechaRecepcion" to Timestamp.now().toDate().time - (8L * 24 * 60 * 60 * 1000),
-                    "notas" to "Transferencia completada exitosamente",
-                    "autorizadoPor" to "Carlos Rodríguez"
-                ),
-                hashMapOf(
-                    "materialId" to "MAT015",
-                    "materialNombre" to "Ladrillo King Kong",
-                    "cantidad" to 200,
-                    "origenAlmacen" to "Patio Techado",
-                    "destinoAlmacen" to "Almacén 1",
-                    "responsable" to "José Martínez",
-                    "motivo" to "Reubicación por obras",
-                    "estado" to "PENDIENTE",
-                    "fechaSolicitud" to Timestamp.now().toDate().time - (2L * 24 * 60 * 60 * 1000),
-                    "notas" to "Esperando autorización",
-                    "autorizadoPor" to ""
-                )
+            val currentTime = Timestamp.now().toDate().time
+            val day = 24L * 60 * 60 * 1000
+            val almacenes = listOf("Almacén 1", "Almacén 2", "Almacén 3", "Almacén 4", "Almacén 5", "Almacén 6", "Patio Exterior", "Patio Techado")
+            val estados = listOf("COMPLETADA", "EN_TRANSITO", "PENDIENTE")
+            val responsables = listOf("María González", "José Martínez", "Carlos Rodríguez")
+            val autorizadores = listOf("Carlos Rodríguez", "María González", "")
+            
+            val materials = listOf(
+                "MAT001" to "Cemento Portland Tipo I",
+                "MAT002" to "Cemento Portland Tipo V",
+                "MAT003" to "Arena Gruesa m³",
+                "MAT004" to "Arena Fina m³",
+                "MAT008" to "Fierro Corrugado 6mm",
+                "MAT009" to "Fierro Corrugado 8mm",
+                "MAT015" to "Ladrillo King Kong",
+                "MAT016" to "Ladrillo Pandereta",
+                "MAT018" to "Tubo PVC 2 pulgadas",
+                "MAT019" to "Tubo PVC 3 pulgadas",
+                "MAT025" to "Pintura Látex Blanco",
+                "MAT028" to "Yeso en Bolsas 25kg",
+                "MAT031" to "Cable Eléctrico 12 AWG",
+                "MAT032" to "Interruptores Simples"
             )
+            
+            // Crear 25 transferencias variadas
+            val transfers = mutableListOf<HashMap<String, Any>>()
+            for (i in 0 until 25) {
+                val material = materials[i % materials.size]
+                val estado = estados[i % estados.size]
+                val responsable = responsables[i % responsables.size]
+                val autorizadoPor = if (estado == "COMPLETADA") autorizadores[i % autorizadores.size] else ""
+                val origen = almacenes[i % almacenes.size]
+                val destino = almacenes[(i + 3) % almacenes.size]
+                
+                val fechaSolicitud = currentTime - ((25 - i).toLong() * day)
+                val transfer = hashMapOf<String, Any>(
+                    "materialId" to material.first,
+                    "materialNombre" to material.second,
+                    "cantidad" to (20 + (i * 5) % 200),
+                    "origenAlmacen" to origen,
+                    "destinoAlmacen" to destino,
+                    "responsable" to responsable,
+                    "motivo" to when (i % 5) {
+                        0 -> "Distribución de stock"
+                        1 -> "Reubicación por obras"
+                        2 -> "Abastecimiento de almacén"
+                        3 -> "Optimización de espacio"
+                        else -> "Transferencia programada"
+                    },
+                    "estado" to estado,
+                    "fechaSolicitud" to fechaSolicitud,
+                    "notas" to when (estado) {
+                        "COMPLETADA" -> "Transferencia completada exitosamente"
+                        "EN_TRANSITO" -> "Material en tránsito, llegada programada"
+                        else -> "Esperando autorización"
+                    }
+                )
+                
+                if (estado == "COMPLETADA") {
+                    transfer["fechaTransferencia"] = fechaSolicitud + (1L * day)
+                    transfer["fechaRecepcion"] = fechaSolicitud + (2L * day)
+                    transfer["autorizadoPor"] = autorizadoPor
+                } else if (estado == "EN_TRANSITO") {
+                    transfer["fechaTransferencia"] = fechaSolicitud + (1L * day)
+                    transfer["autorizadoPor"] = autorizadoPor
+                } else {
+                    transfer["autorizadoPor"] = ""
+                }
+                
+                transfers.add(transfer)
+            }
             
             var createdCount = 0
             transfers.forEach { transfer ->
                 try {
                     db.collection("transfers").add(transfer).await()
                     createdCount++
-                    println("  ✅ Transferencia creada: ${transfer["materialNombre"]}")
+                    println("  ✅ Transferencia creada: ${transfer["materialNombre"]} - ${transfer["estado"]}")
                 } catch (e: Exception) {
                     println("❌ Error al crear transferencia: ${e.message}")
                     e.printStackTrace()

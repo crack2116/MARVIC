@@ -2,7 +2,9 @@ package com.proyecto.marvic.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -38,6 +40,7 @@ import kotlin.random.Random
         onGoToTransfers: () -> Unit = {},
         onGoToAnalytics: () -> Unit = {},
         onGoToProfile: () -> Unit = {},
+        onBack: () -> Unit = {},
         vm: InventoryViewModel = viewModel(),
         authVm: AuthViewModel = viewModel(),
         aiVm: RealAIViewModel = viewModel()
@@ -156,14 +159,17 @@ import kotlin.random.Random
                 Text("Análisis en tiempo real", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
             }
                 Row {
-                    IconButton(onClick = onGoToProfile) {
-                        Icon(Icons.Default.Person, contentDescription = "Mi Perfil", tint = Color.White)
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver al Dashboard", tint = Color.White)
                     }
-                    IconButton(onClick = onGoToUserManagement) {
-                        Icon(Icons.Default.ManageAccounts, contentDescription = "Gestión de Usuarios", tint = Color.White)
-                    }
-                    IconButton(onClick = onGoToNotifications) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White)
+                    // Solo mostrar gestión de usuarios y notificaciones si no es almacenero
+                    if (UserSession.currentRole != "almacenero") {
+                        IconButton(onClick = onGoToUserManagement) {
+                            Icon(Icons.Default.ManageAccounts, contentDescription = "Gestión de Usuarios", tint = Color.White)
+                        }
+                        IconButton(onClick = onGoToNotifications) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White)
+                        }
                     }
                 }
         }
@@ -196,51 +202,54 @@ import kotlin.random.Random
             Column(
                 modifier = Modifier
                     .weight(1f)
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Acciones Rápidas
-                Text("Acciones Rápidas", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF673AB7)),
-                        onClick = onGoToProviders
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.Store, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            Text("Proveedores", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
+                // Acciones Rápidas - Solo mostrar Proveedores y Proyectos si no es almacenero
+                if (UserSession.currentRole != "almacenero") {
+                    Text("Acciones Rápidas", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF00BCD4)),
-                        onClick = onGoToProjects
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
+                        Card(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                .weight(1f)
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF673AB7)),
+                            onClick = onGoToProviders
                         ) {
-                            Icon(Icons.Default.Folder, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            Text("Proyectos", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.Store, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Text("Proveedores", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF00BCD4)),
+                            onClick = onGoToProjects
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.Folder, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Text("Proyectos", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -408,7 +417,7 @@ import kotlin.random.Random
             }
         }
 
-        // Navegación
+        // Navegación - Solo Dashboard, sin Movimiento
         NavigationBar(containerColor = Color(0xFF1A1A1A)) {
             NavigationBarItem(
                 selected = true,
@@ -423,22 +432,6 @@ import kotlin.random.Random
                     indicatorColor = Color.Transparent
                 )
             )
-            
-            if (UserSession.canAccessMovement()) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onGoToMovement,
-                    label = { Text("Movimiento", fontSize = 11.sp) },
-                    icon = { Icon(Icons.Default.SwapVert, contentDescription = null) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White,
-                        selectedTextColor = Color.White,
-                        unselectedIconColor = Color.White,
-                        unselectedTextColor = Color.White,
-                        indicatorColor = Color.Transparent
-                    )
-                )
-            }
             
             if (UserSession.canAccessSearch()) {
                 NavigationBarItem(

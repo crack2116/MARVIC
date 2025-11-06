@@ -83,17 +83,27 @@ class MainActivity : ComponentActivity() {
         // Datos iniciales en segundo plano
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // IMPORTANTE: Inicializar usuarios PRIMERO con UserInitializer (usa IDs específicos)
+                // Esto evita conflictos con FirestoreInitializer.loadSampleUsers()
+                UserInitializer.initializeDefaultUsers()
+                
                 // Inicializar TODAS las colecciones (cada una verifica si está vacía)
-                // Esto asegura que proveedores, proyectos, transferencias, etc. se creen
-                FirestoreInitializer.initializeIfEmpty(forceReload = false)
+                // CAMBIAR A forceReload = true PARA FORZAR REINICIALIZACIÓN (solo durante desarrollo)
+                // En producción mantener forceReload = false
+                // IMPORTANTE: Cambiar a true SOLO si quieres forzar reinicialización completa
+                // Esto sobrescribirá todos los datos existentes
+                val forceReload = false // ⚠️ Cambiar a true para forzar reinicialización completa
+                
+                // Inicializar todas las colecciones (cada una verifica si está vacía independientemente)
+                println("🔄 Iniciando inicialización de colecciones...")
+                FirestoreInitializer.initializeIfEmpty(forceReload = forceReload)
+                println("✅ FirestoreInitializer completado")
                 
                 // Inicializar roles si no existen
                 FirestoreRoleRepository().initializeDefaultRoles()
                 
-                // Inicializar usuarios con UserInitializer (usa IDs específicos)
-                UserInitializer.initializeDefaultUsers()
-                
                 println("✅ Inicialización automática completada - Todas las colecciones verificadas")
+                println("📊 Verifica en Firebase Console: users, providers, projects, movements, transfers")
             } catch (e: Exception) {
                 println("❌ Error en inicialización: ${e.message}")
                 e.printStackTrace()
@@ -126,7 +136,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                     onGoToMovement = { navController.navigate(Routes.Movement.route) },
                     onGoToSearch = { navController.navigate(Routes.AdvancedSearch.route) },
                     onGoToReports = { navController.navigate(Routes.Reports.route) },
-                    onGoToSmartDashboard = { navController.navigate(Routes.SmartDashboard.route) }
+                    onGoToSmartDashboard = { navController.navigate(Routes.SmartDashboard.route) },
+                    onGoToProfile = { navController.navigate(Routes.Profile.route) },
+                    onGoToAnalytics = { navController.navigate(Routes.Analytics.route) }
                 )
             }
             composable(Routes.SmartDashboard.route) {
@@ -140,7 +152,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                     onGoToProjects = { navController.navigate(Routes.Projects.route) },
                     onGoToTransfers = { navController.navigate(Routes.Transfers.route) },
                     onGoToAnalytics = { navController.navigate(Routes.Analytics.route) },
-                    onGoToProfile = { navController.navigate(Routes.Profile.route) }
+                    onGoToProfile = { navController.navigate(Routes.Profile.route) },
+                    onBack = { navController.navigate(Routes.Dashboard.route) }
                 )
             }
         composable(Routes.Movement.route) {

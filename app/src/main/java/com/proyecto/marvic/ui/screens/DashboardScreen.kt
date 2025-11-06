@@ -25,13 +25,23 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,7 +60,18 @@ import com.proyecto.marvic.data.UserSession
 import com.proyecto.marvic.data.MaterialItem
 
 @Composable
-fun DashboardScreen(onGoToMovement: () -> Unit, onGoToSearch: () -> Unit, onGoToReports: () -> Unit, onGoToSmartDashboard: () -> Unit, vm: InventoryViewModel = viewModel(), authVm: AuthViewModel = viewModel()) {
+fun DashboardScreen(
+    onGoToMovement: () -> Unit, 
+    onGoToSearch: () -> Unit, 
+    onGoToReports: () -> Unit, 
+    onGoToSmartDashboard: () -> Unit,
+    onGoToProfile: () -> Unit = {},
+    onGoToAnalytics: () -> Unit = {},
+    vm: InventoryViewModel = viewModel(), 
+    authVm: AuthViewModel = viewModel()
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    
     LaunchedEffect(Unit) {
         vm.refreshTotals()
         vm.observeCritical()
@@ -61,12 +82,66 @@ fun DashboardScreen(onGoToMovement: () -> Unit, onGoToSearch: () -> Unit, onGoTo
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFF121212))) {
             Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF1A1A1A)).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Grupo Marvic - Dashboard", color = Color.White, fontWeight = FontWeight.SemiBold)
-                Button(
-                    onClick = onGoToSmartDashboard,
-                    colors = ButtonDefaults.buttonColors(containerColor = MarvicOrange),
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Text("Dashboard IA", color = Color.White, fontSize = 12.sp)
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Menú de usuario",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(Color(0xFF1A1A1A))
+                    ) {
+                        DropdownMenuItem(
+                            text = { 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Dashboard, contentDescription = null, tint = MarvicOrange, modifier = Modifier.size(20.dp))
+                                    Text("Dashboard", color = Color.White)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                onGoToSmartDashboard()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Person, contentDescription = null, tint = MarvicOrange, modifier = Modifier.size(20.dp))
+                                    Text("Mi Perfil", color = Color.White)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                onGoToProfile()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Analytics, contentDescription = null, tint = MarvicOrange, modifier = Modifier.size(20.dp))
+                                    Text("Analizador de IA", color = Color.White)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                onGoToAnalytics()
+                            }
+                        )
+                    }
                 }
             }
         Column(modifier = Modifier.weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
